@@ -66,28 +66,28 @@ done
 
 read -p "Enter the Table name:  " tableName
 tableName=$(cleanName "$tableName")
+
 if [[ $tableName = "" ]]; then
-    echo " Error : You didn't enter any value."
+    echo "Error: You didn't enter any value."
     exit 1
 elif [ ! -f "$tableName" ]; then
     if [[ $tableName =~ [^a-zA-Z_] ]]; then
         echo "Error table name: Please enter a valid name without special characters, and not starting with a number."
         exit 1
-     
-        read -p "Enter the number of columns: " col
+    fi
 
-        if [[ $col = "" ]]; then
-            echo "You didn't enter any value. Please enter the number of columns."
-            exit 1
-        fi
+    read -p "Enter the number of columns: " col
 
-        create_table "$tableName" "$col"
-
-    else
-        echo "Incorrect Table name. Please enter a valid table name."
+    if [[ $col = "" ]]; then
+        echo "You didn't enter any value. Please enter the number of columns."
         exit 1
     fi
+
+ 
+    create_table "$tableName" "$col"
+
 else
     echo "Table Already Exists."
     exit 1
 fi
+
