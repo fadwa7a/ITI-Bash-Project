@@ -1,82 +1,94 @@
- #!/user/bin/bash
- shopt -s extglob #turn on pattern and enable it
- 
- #Function to check if a string starts or ends with a space
-  cleanName() {
+   #!/usr/bin/bash
+
+shopt -s extglob
+
+cleanName() {
     local var="$*"
     var=$(echo "$var" | tr -s ' ' | tr ' ' '_')
     echo -n "$var"
 }
-read -p "Enter the name of the table: " tableName
 
- tableName=$(cleanName "$tableName")
- 
-# Check if the user didn't enter any data for the table name
-if [ -z "$tableName" ]; then
-    echo "Error: No name entered. Please enter a valid name."
-    exit 1
-fi
-# Check for a valid table name
- if [[ $tableName =~ [^a-zA-Z_] || $tableName =~ ^[0-9] ]]; then
-    echo "Error table name: Please enter a valid name without special characters, and not starting with a number."
-    exit 1
- fi
- 
- # Check if the table file already exists
-tableFile="$tableName.txt"
-if [ -f "$tableFile" ]; then
-    echo "Error: Table name '$tableFile' already exists. Please choose another name."
-    exit 1
-fi
-# Assuming col_defs is the array containing column names and types
-col_defs=()
+create_table() {
+    local tableName=$1
+    local colCount=0
+    local colIndex=1
+    local colNames=""
+    local colTypes=""
+    local colType=0
 
-read -p "Enter the number of columns: " num_cols
-
-for ((i = 1; i <= num_cols; i++)); do
-    read -p "Enter the name of column $i: " col_name
-     col_name=$(cleanName "$col_name")
-     if [[ -z $col_name || $col_name =~ [^a-zA-Z_] || $tableName =~ ^[0-9]  ]]; then
-        echo "Invalid column name. Please enter a valid name without spaces , special characters and not starting with a number."
-        exit 1
+     while [ $colCount -lt $2 ]; do
+    read -p "Enter the name of column number $colIndex: " colName
+    col_name=$(cleanName "$col_Name")
+    if [[ $colName =~ [^a-zA-Z_] || $colName == [0-9]* ]]; then
+        echo "Invalid column name. Please enter a valid name without spaces, special characters, and not starting with a number."
+        continue
     fi
 
-    read -p "Enter the type of column $i (int/string): " type
+    if [ "$colName" ]; then
+        read -p "Enter the Type of column 'int' or 'string': " colType
 
- 
-    if [[ $type != "int" && $type != "string" ]]; then
-        echo "Invalid column type. Please enter 'int' or 'string'."
-        exit 1
-    fi
-
- # Set primary key status for the first column
-    if [[ $i -eq 1 ]]; then
-        isPrimaryKey="PRIMARY KEY"
+        if [ "$colType" = "" ]; then
+            echo "No value entered. Please enter the type of column."
+            continue
+        elif [[ $colType == "string" || $colType == "int" ]]; then
+            if [[ $colCount == 0 ]]; then
+                colNames=$colName":"
+                colTypes=$colType":"
+            else
+                colNames=$colNames$colName":"
+                colTypes=$colTypes$colType":"
+            fi
+        else
+            echo "Unknown Data Type. Please enter a valid column type."
+            continue
+        fi
     else
-        isPrimaryKey=""
+        echo "No data entered. Please enter the column name."
+        continue
     fi
 
-    col_defs[$i]="$col_name $type $isPrimaryKey"
+    ((colCount++))
+    ((colIndex++))
 done
 
- 
-tableFile="$tableName.txt"
+    if [[ colCount -lt $2 ]]; then
+        echo "Table creation failed. Please try again."
+        return 1
+    else
+         echo -e "$colNames\n$colTypes" > "$tableName"
+        echo "Table '$tableName' created successfully"
+        echo "============================="
+        echo " Table '$tableName' Content : "
+        echo "============================="
+        cat "$tableName"
+   fi
+}
 
+read -p "Enter the Table name:  " tableName
+tableName=$(cleanName "$tableName")
+if [[ $tableName = "" ]]; then
+    echo " Error : You didn't enter any value."
+    exit 1
+elif [ ! -f "$tableName" ]; then
+    if [[ $tableName =~ [^a-zA-Z_] ]]; then
+        echo "Error table name: Please enter a valid name without special characters, and not starting with a number."
+        exit 1
+     
+        read -p "Enter the number of columns: " col
 
-# Write the table definition to the file
-echo "Table: $tableName" > "$tableFile"
-for ((i = 1; i <= num_cols; i++)); do
-    echo "${col_defs[$i]}" >> "$tableFile"
-done
+        if [[ $col = "" ]]; then
+            echo "You didn't enter any value. Please enter the number of columns."
+            exit 1
+        fi
 
-echo "Table '$tableName' created successfully. Definition stored in '$tableFile'."
+        create_table "$tableName" "$col"
 
-echo " Table '$tableName' Content : "
-echo "----------------------------------"
-for ((i = 1; i <= num_cols; i++)); do
-    echo "Column $i: ${col_defs[$i]}"
-done
-
-
-
+    else
+        echo "Incorrect Table name. Please enter a valid table name."
+        exit 1
+    fi
+else
+    echo "Table Already Exists."
+    exit 1
+fi
 
